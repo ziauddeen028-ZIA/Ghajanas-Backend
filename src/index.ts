@@ -1,11 +1,12 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
-
-dotenv.config();
+import { config } from './config.js';
+import authRoutes from './routes/auth.js';
+import orderRoutes from './routes/orders.js';
+import profileRoutes from './routes/profile.js';
 
 const app = express();
-const port = process.env.PORT || 5000;
+const port = config.port;
 
 app.use(cors());
 app.use(express.json());
@@ -14,19 +15,28 @@ app.use(express.json());
 app.get('/api/health', (_req: Request, res: Response) => {
   res.json({
     status: 'ok',
-    service: 'NJ Essentials API',
+    service: 'Ghajanas / NJ Essentials API',
     version: '1.0.0',
-    timestamp: new Date().toISOString()
+    phase: 'Phase 1 - Customer & Admin Authentication Foundation',
+    timestamp: new Date().toISOString(),
   });
 });
 
-// Phase 1: Customer UI Only. API routes will be implemented in subsequent phases.
+// Mounted Phase 1 Routers
+app.use('/api/auth', authRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/api/profile', profileRoutes);
+
+// Root API Welcome & Phase explanation
 app.get('/api', (_req: Request, res: Response) => {
   res.json({
-    message: 'Welcome to NJ Essentials Backend API. Database & Auth will be enabled in Phase 2.'
+    message: 'Welcome to Ghajanas / NJ Essentials Backend API.',
+    phase: 'Phase 1 Active: Supabase Token Verification, Auth Guards & Ownership Scoping.',
+    next: 'Phase 2: PostgreSQL with Prisma ORM persistence, full product catalog DB, and admin CRUD.',
   });
 });
 
 app.listen(port, () => {
-  console.log(`NJ Essentials Backend running at http://localhost:${port}`);
+  console.log(`🌿 Ghajanas Backend running at http://localhost:${port}`);
+  console.log(`🔐 Admin Whitelist: ${config.adminEmails.join(', ')}`);
 });
