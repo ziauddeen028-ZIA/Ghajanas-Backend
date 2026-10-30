@@ -36,11 +36,16 @@ export const requireAuth = async (
 
   const token = authHeader.split(' ')[1];
 
+  // DIAGNOSTIC — remove after confirming admin auth works
+  console.log('[AUTH] Token received | length:', token?.length, '| prefix:', token?.substring(0, 10));
+
   try {
     const supabase = getSupabaseServerClient();
     const { data: { user }, error } = await supabase.auth.getUser(token);
 
     if (error || !user) {
+      // DIAGNOSTIC — remove after confirming admin auth works
+      console.log('[AUTH] Token verification FAILED | error:', error?.message);
       res.status(401).json({
         error: 'Invalid or expired authentication session. Please log in again.',
         details: error?.message,
@@ -56,6 +61,12 @@ export const requireAuth = async (
       ? config.adminEmails.includes(user.email.toLowerCase())
       : false;
     const isAdmin = isAppMetadataAdmin || isWhitelistedEmail;
+
+    // DIAGNOSTIC — remove after confirming admin auth works
+    console.log('[AUTH] Token verified for email:', user.email);
+    console.log('[AUTH] app_metadata:', JSON.stringify(user.app_metadata));
+    console.log('[AUTH] isAppMetadataAdmin:', isAppMetadataAdmin, '| isWhitelistedEmail:', isWhitelistedEmail, '| isAdmin:', isAdmin);
+    console.log('[AUTH] ADMIN_EMAILS list:', config.adminEmails);
 
     const authenticatedUser: AuthenticatedUser = {
       ...user,
