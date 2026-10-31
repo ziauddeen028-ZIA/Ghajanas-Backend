@@ -4,6 +4,8 @@ import { config } from './config.js';
 import authRoutes from './routes/auth.js';
 import orderRoutes from './routes/orders.js';
 import profileRoutes from './routes/profile.js';
+import categoryRoutes from './routes/categories.js';
+import productRoutes from './routes/products.js';
 
 const app = express();
 const port = config.port;
@@ -26,6 +28,10 @@ app.get('/api/health', (_req: Request, res: Response) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/profile', profileRoutes);
+
+// Mounted Phase 2 Catalog & Admin Routers
+app.use('/api/categories', categoryRoutes);
+app.use('/api/products', productRoutes);
 
 // Root API Welcome & Phase explanation
 app.get('/api', (_req: Request, res: Response) => {

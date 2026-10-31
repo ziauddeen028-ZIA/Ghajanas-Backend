@@ -1,0 +1,263 @@
+// Ghajanas / NJ Essentials - Prisma Schema
+// Phase 2: PostgreSQL Persistence with Supabase Auth UUID integration
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// -------------------------------------------------------------
+// ENUMS
+// -------------------------------------------------------------
+
+enum PaymentMethod {
+  upi
+  cod
+  whatsapp_order
+}
+
+enum PaymentStatus {
+  Unpaid
+  Paid
+}
+
+enum OrderStatus {
+  Received
+  Processing
+  Dispatched
+  Delivered
+  Cancelled
+}
+
+// -------------------------------------------------------------
+// 1. CUSTOMER PROFILE
+// -------------------------------------------------------------
+// Identifies customers via Supabase Auth user UUID.
+// Does NOT store passwords or auth credentials (handled by Supabase).
+model Profile {
+  id             String   @id @default(uuid())
+  userId         String   @unique // Supabase Auth user UUID (auth.users.id)
+  fullName       String
+  phone          String
+  alternatePhone String?
+  addressLine    String
+  landmark       String?
+  city           String
+  state          String
+  pincode        String
+  deliveryNotes  String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relationships
+  cart   Cart?
+  orders Order[]
+
+  @@index([userId])
+}
+
+// -------------------------------------------------------------
+// 2. CATEGORY
+// -------------------------------------------------------------
+model Category {
+  id           String   @id @default(uuid())
+  name         String
+  tamilName    String?
+  slug         String   @unique
+  description  String?
+  image        String?
+  iconName     String?
+  itemCount    Int      @default(0)
+  isPopular    Boolean  @default(false)
+  isActive     Boolean  @default(true)
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relationships
+  products Product[]
+
+  @@index([slug])
+  @@index([isActive])
+}
+
+// -------------------------------------------------------------
+// 3. PRODUCT
+// -------------------------------------------------------------
+model Product {
+  id                  String   @id @default(uuid())
+  name                String
+  tamilName           String?
+  slug                String   @unique
+  categoryId          String
+  shortDescription    String?
+  description         String?
+  benefits            String[]
+  origin              String?
+  rating              Decimal  @default(5.00) @db.Decimal(3, 2)
+  reviewCount         Int      @default(0)
+  images              String[]
+  isFeatured          Boolean  @default(false)
+  isTopSeller         Boolean  @default(false)
+  isOrganic           Boolean  @default(true)
+  badge               String?
+  nutritionHighlights Json?
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  // Relationships
+  category   Category         @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  variants   ProductVariant[]
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+
+  @@index([categoryId])
+  @@index([slug])
+  @@index([isActive])
+}
+
+// -------------------------------------------------------------
+// 4. PRODUCT VARIANT (Weight Option & Stock)
+// -------------------------------------------------------------
+model ProductVariant {
+  id            String   @id @default(uuid())
+  productId     String
+  label         String // e.g. "500 g", "1 kg", "5 kg", "250 g"
+  price         Decimal  @db.Decimal(10, 2) // in INR
+  originalPrice Decimal? @db.Decimal(10, 2) // for discount calculation
+  stock         Int      @default(0) // Inventory count
+  inStock       Boolean  @default(true) // Quick stock flag
+  isActive      Boolean  @default(true) // Variant visibility
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relationships
+  product    Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+
+  @@index([productId])
+  @@index([inStock])
+  @@index([isActive])
+}
+
+// -------------------------------------------------------------
+// 5. CART
+// -------------------------------------------------------------
+// Persistent cart mapped to Supabase customer UUID.
+model Cart {
+  id        String   @id @default(uuid())
+  userId    String   @unique // Supabase Auth user UUID
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  profile Profile?   @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  items   CartItem[]
+
+  @@index([userId])
+}
+
+// -------------------------------------------------------------
+// 6. CART ITEM
+// -------------------------------------------------------------
+model CartItem {
+  id        String   @id @default(uuid())
+  cartId    String
+  productId String
+  variantId String
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  cart    Cart           @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variant ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, productId, variantId])
+  @@index([cartId])
+  @@index([productId])
+  @@index([variantId])
+}
+
+// -------------------------------------------------------------
+// 7. ORDER
+// -------------------------------------------------------------
+// Complete order record with permanent customer address snapshot.
+model Order {
+  id          String  @id @default(uuid())
+  orderNumber String  @unique // Unique order reference code e.g. "GHJ-20261031-1001"
+  userId      String // Supabase Auth user UUID
+  userEmail   String?
+
+  // Customer Address Snapshot at time of order
+  customerName   String
+  customerPhone  String
+  alternatePhone String?
+  addressLine    String
+  landmark       String?
+  city           String
+  state          String
+  pincode        String
+  deliveryNotes  String?
+
+  // Monetary Totals (INR Decimal)
+  subtotal    Decimal @db.Decimal(10, 2)
+  deliveryFee Decimal @default(0.00) @db.Decimal(10, 2)
+  discount    Decimal @default(0.00) @db.Decimal(10, 2)
+  total       Decimal @db.Decimal(10, 2)
+
+  // Status & Method
+  paymentMethod PaymentMethod
+  paymentStatus PaymentStatus @default(Unpaid)
+  orderStatus   OrderStatus   @default(Received)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  profile Profile?    @relation(fields: [userId], references: [userId], onDelete: Restrict)
+  items   OrderItem[]
+
+  @@index([userId])
+  @@index([paymentStatus])
+  @@index([orderStatus])
+  @@index([createdAt])
+}
+
+// -------------------------------------------------------------
+// 8. ORDER ITEM
+// -------------------------------------------------------------
+// Frozen snapshot of product, variant, quantity and pricing at order time.
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String
+  productId String? // Nullable if referenced product is later deleted
+  variantId String? // Nullable if referenced variant is later deleted
+
+  // Frozen Snapshots
+  productName   String
+  tamilName     String?
+  productImage  String
+  categoryName  String
+  variantLabel  String // e.g. "500 g", "1 kg"
+  price         Decimal  @db.Decimal(10, 2) // Unit price at order time
+  originalPrice Decimal? @db.Decimal(10, 2) // Original unit price at order time
+  quantity      Int
+  totalPrice    Decimal  @db.Decimal(10, 2) // price * quantity
+
+  // Relationships
+  order   Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product?        @relation(fields: [productId], references: [id], onDelete: SetNull)
+  variant ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+  @@index([productId])
+  @@index([variantId])
+}
