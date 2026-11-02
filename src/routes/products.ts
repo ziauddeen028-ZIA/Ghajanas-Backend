@@ -34,6 +34,7 @@ const formatProduct = (p: any) => {
     slug: p.slug,
     categoryId: p.categoryId,
     categoryName: p.category?.name || '',
+    categorySlug: p.category?.slug || '',
     shortDescription: p.shortDescription || '',
     description: p.description || '',
     benefits: Array.isArray(p.benefits) ? p.benefits : [],

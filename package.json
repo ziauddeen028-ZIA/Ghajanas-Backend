@@ -1,7 +1,7 @@
 {
-  "name": "nj-essentials-backend",
+  "name": "ghajanas-backend",
   "version": "1.0.0",
-  "description": "Backend API for NJ Essentials grocery e-commerce",
+  "description": "Backend API for Ghajanas grocery e-commerce",
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
@@ -16,7 +16,7 @@
     "express",
     "typescript"
   ],
-  "author": "NJ Essentials",
+  "author": "Ghajanas",
   "license": "ISC",
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.1",

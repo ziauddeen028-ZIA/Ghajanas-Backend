@@ -6,6 +6,7 @@ import orderRoutes from './routes/orders.js';
 import profileRoutes from './routes/profile.js';
 import categoryRoutes from './routes/categories.js';
 import productRoutes from './routes/products.js';
+import cartRoutes from './routes/cart.js';
 
 const app = express();
 const port = config.port;
@@ -17,7 +18,7 @@ app.use(express.json());
 app.get('/api/health', (_req: Request, res: Response) => {
   res.json({
     status: 'ok',
-    service: 'Ghajanas / NJ Essentials API',
+    service: 'Ghajanas API',
     version: '1.0.0',
     phase: 'Phase 1 - Customer & Admin Authentication Foundation',
     timestamp: new Date().toISOString(),
@@ -29,14 +30,15 @@ app.use('/api/auth', authRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/profile', profileRoutes);
 
-// Mounted Phase 2 Catalog & Admin Routers
+// Mounted Phase 2 Catalog, Cart & Admin Routers
 app.use('/api/categories', categoryRoutes);
 app.use('/api/products', productRoutes);
+app.use('/api/cart', cartRoutes);
 
 // Root API Welcome & Phase explanation
 app.get('/api', (_req: Request, res: Response) => {
   res.json({
-    message: 'Welcome to Ghajanas / NJ Essentials Backend API.',
+    message: 'Welcome to Ghajanas Backend API.',
     phase: 'Phase 1 Active: Supabase Token Verification, Auth Guards & Ownership Scoping.',
     next: 'Phase 2: PostgreSQL with Prisma ORM persistence, full product catalog DB, and admin CRUD.',
   });
