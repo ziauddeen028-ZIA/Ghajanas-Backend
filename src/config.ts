@@ -12,10 +12,10 @@ export const config = {
     url: process.env.DATABASE_URL || '',
     directUrl: process.env.DIRECT_URL || '',
   },
-  adminEmails: (process.env.ADMIN_EMAILS || 'admin@ghajanas.com,owner@ghajanas.com')
+  adminEmails: (process.env.ADMIN_EMAILS || 'ghajanas.mart@gmail.com')
     .split(',')
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean),
-  ownerPhoneNumber: process.env.OWNER_PHONE_NUMBER || '916382240715',
+  ownerPhoneNumber: process.env.OWNER_PHONE_NUMBER || '919791796170',
 };
 

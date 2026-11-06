@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import { config } from './config.js';
+
 import authRoutes from './routes/auth.js';
 import orderRoutes from './routes/orders.js';
 import profileRoutes from './routes/profile.js';
@@ -9,42 +10,66 @@ import productRoutes from './routes/products.js';
 import cartRoutes from './routes/cart.js';
 
 const app = express();
-const port = config.port;
 
-app.use(cors());
+// CORS configuration
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://ghajanas.in',
+  'https://www.ghajanas.in',
+];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+  })
+);
+
 app.use(express.json());
 
-// Health check endpoint
+// Health check
 app.get('/api/health', (_req: Request, res: Response) => {
   res.json({
     status: 'ok',
     service: 'Ghajanas API',
     version: '1.0.0',
-    phase: 'Phase 1 - Customer & Admin Authentication Foundation',
     timestamp: new Date().toISOString(),
   });
 });
 
-// Mounted Phase 1 Routers
+// API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/profile', profileRoutes);
-
-// Mounted Phase 2 Catalog, Cart & Admin Routers
 app.use('/api/categories', categoryRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
 
-// Root API Welcome & Phase explanation
+// API Welcome
 app.get('/api', (_req: Request, res: Response) => {
   res.json({
     message: 'Welcome to Ghajanas Backend API.',
-    phase: 'Phase 1 Active: Supabase Token Verification, Auth Guards & Ownership Scoping.',
-    next: 'Phase 2: PostgreSQL with Prisma ORM persistence, full product catalog DB, and admin CRUD.',
+    status: 'running',
   });
 });
 
-app.listen(port, () => {
-  console.log(`🌿 Ghajanas Backend running at http://localhost:${port}`);
-  console.log(`🔐 Admin Whitelist: ${config.adminEmails.join(', ')}`);
-});
+// Local development only
+if (config.nodeEnv !== 'production') {
+  app.listen(config.port, () => {
+    console.log(
+      `🌿 Ghajanas Backend running at http://localhost:${config.port}`
+    );
+    console.log(
+      `🔐 Admin Whitelist: ${config.adminEmails.join(', ')}`
+    );
+  });
+}
+
+// Vercel serverless export
+export default app;
