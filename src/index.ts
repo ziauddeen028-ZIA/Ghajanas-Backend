@@ -14,6 +14,7 @@ const app = express();
 // CORS configuration
 const allowedOrigins = [
   'http://localhost:5173',
+  'https://ghajanas-frontend.vercel.app',
   'https://ghajanas.in',
   'https://www.ghajanas.in',
 ];
